@@ -9,10 +9,10 @@ mod helpers;
 mod metadata;
 mod properties;
 
-use glyph::*;
-use helpers::*;
-use metadata::*;
-use properties::*;
+pub use glyph::Glyph;
+use helpers::{statement, Parse};
+pub use metadata::Metadata;
+pub use properties::{Properties, PropertyValue};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct BdfFont {
@@ -36,13 +36,13 @@ impl BdfFont {
 }
 
 fn parse_bdf(input: &str) -> IResult<&str, BdfFont> {
-    let (input, metadata) = opt(header)(input)?;
+    let (input, metadata) = opt(Metadata::parse)(input)?;
     let (input, _) = multispace0(input)?;
-    let (input, properties) = opt(properties)(input)?;
+    let (input, properties) = opt(properties::parse)(input)?;
     let (input, _) = multispace0(input)?;
     let (input, _) = opt(statement("CHARS", u32::parse))(input)?;
     let (input, _) = multispace0(input)?;
-    let (input, glyphs) = many0(glyph)(input)?;
+    let (input, glyphs) = many0(Glyph::parse)(input)?;
     let (input, _) = multispace0(input)?;
     let (input, _) = opt(tag("ENDFONT"))(input)?;
     let (input, _) = multispace0(input)?;
@@ -64,6 +64,7 @@ extern crate maplit;
 #[cfg(test)]
 mod tests {
     use super::*;
+
     use embedded_graphics::{prelude::Point, prelude::Size, primitives::Rectangle};
 
     #[test]

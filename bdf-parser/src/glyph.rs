@@ -21,6 +21,30 @@ pub struct Glyph {
     pub device_width: Option<Size>,
 }
 
+impl Parse for Glyph {
+    fn parse(input: &str) -> IResult<&str, Glyph> {
+        let (input, name) = statement("STARTCHAR", String::parse)(input)?;
+        let (input, encoding) = statement("ENCODING", parse_encoding)(input)?;
+        let (input, scalable_width) = opt(statement("SWIDTH", Size::parse))(input)?;
+        let (input, device_width) = opt(statement("DWIDTH", Size::parse))(input)?;
+        let (input, bounding_box) = statement("BBX", Rectangle::parse)(input)?;
+        let (input, _) = multispace0(input)?;
+        let (input, bitmap) = parse_bitmap(input)?;
+
+        Ok((
+            input,
+            Glyph {
+                bitmap,
+                bounding_box,
+                encoding,
+                name,
+                scalable_width,
+                device_width,
+            },
+        ))
+    }
+}
+
 fn hex_byte(input: &str) -> IResult<&str, u8> {
     map_res(take_while_m_n(2, 2, |c: char| c.is_ascii_hexdigit()), |v| {
         u8::from_str_radix(v, 16)
@@ -38,28 +62,6 @@ fn parse_encoding(input: &str) -> IResult<&str, Option<char>> {
     map(i32::parse, |code| {
         u32::try_from(code).ok().and_then(std::char::from_u32)
     })(input)
-}
-
-pub fn glyph(input: &str) -> IResult<&str, Glyph> {
-    let (input, name) = statement("STARTCHAR", String::parse)(input)?;
-    let (input, encoding) = statement("ENCODING", parse_encoding)(input)?;
-    let (input, scalable_width) = opt(statement("SWIDTH", Size::parse))(input)?;
-    let (input, device_width) = opt(statement("DWIDTH", Size::parse))(input)?;
-    let (input, bounding_box) = statement("BBX", Rectangle::parse)(input)?;
-    let (input, _) = multispace0(input)?;
-    let (input, bitmap) = parse_bitmap(input)?;
-
-    Ok((
-        input,
-        Glyph {
-            bitmap,
-            bounding_box,
-            encoding,
-            name,
-            scalable_width,
-            device_width,
-        },
-    ))
 }
 
 #[cfg(test)]
@@ -128,10 +130,8 @@ BITMAP
 00
 ENDCHAR"#;
 
-        let out = glyph(chardata);
-
         assert_eq!(
-            out,
+            Glyph::parse(chardata),
             Ok((
                 "",
                 Glyph {
@@ -159,10 +159,8 @@ BBX 0 0 0 0
 BITMAP
 ENDCHAR"#;
 
-        let out = glyph(chardata);
-
         assert_eq!(
-            out,
+            Glyph::parse(chardata),
             Ok((
                 "",
                 Glyph {
@@ -187,10 +185,8 @@ BBX 0 0 0 0
 BITMAP
 ENDCHAR"#;
 
-        let out = glyph(chardata);
-
         assert_eq!(
-            out,
+            Glyph::parse(chardata),
             Ok((
                 "",
                 Glyph {

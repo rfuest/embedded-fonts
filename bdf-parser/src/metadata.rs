@@ -2,7 +2,7 @@ use embedded_graphics::{prelude::*, primitives::Rectangle};
 use nom::{
     character::complete::{multispace0, space1},
     combinator::{map, map_res},
-    sequence::{preceded, separated_pair},
+    sequence::separated_pair,
     IResult,
 };
 
@@ -16,6 +16,28 @@ pub struct Metadata {
     pub resolution: (u32, u32),
     pub bounding_box: Rectangle,
 }
+
+impl Parse for Metadata {
+    fn parse(input: &str) -> IResult<&str, Metadata> {
+        let (input, version) = skip_comments(metadata_version)(input)?;
+        let (input, name) = skip_comments(metadata_name)(input)?;
+        let (input, (point_size, resolution)) = skip_comments(metadata_size)(input)?;
+        let (input, bounding_box) = skip_comments(metadata_bounding_box)(input)?;
+        let (input, _) = multispace0(input)?;
+
+        Ok((
+            input,
+            Metadata {
+                version,
+                name,
+                point_size,
+                resolution,
+                bounding_box,
+            },
+        ))
+    }
+}
+
 fn metadata_version(input: &str) -> IResult<&str, f32> {
     map_res(statement("STARTFONT", String::parse), |text| text.parse())(input)
 }
@@ -39,26 +61,6 @@ fn metadata_bounding_box(input: &str) -> IResult<&str, Rectangle> {
     statement("FONTBOUNDINGBOX", Rectangle::parse)(input)
 }
 
-pub fn header(input: &str) -> IResult<&str, Metadata> {
-    let (input, version) = preceded(optional_comments, metadata_version)(input)?;
-    let (input, name) = preceded(optional_comments, metadata_name)(input)?;
-    let (input, (point_size, resolution)) = preceded(optional_comments, metadata_size)(input)?;
-    let (input, bounding_box) = preceded(optional_comments, metadata_bounding_box)(input)?;
-    let (input, _) = optional_comments(input)?;
-    let (input, _) = multispace0(input)?;
-
-    Ok((
-        input,
-        Metadata {
-            version,
-            name,
-            point_size,
-            resolution,
-            bounding_box,
-        },
-    ))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -80,7 +82,7 @@ SIZE 16 75 75
 FONTBOUNDINGBOX 16 24 0 0"#;
 
         assert_eq!(
-            header(input),
+            Metadata::parse(input),
             Ok((
                 "",
                 Metadata {

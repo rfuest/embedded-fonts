@@ -1,9 +1,8 @@
 use embedded_graphics::{prelude::*, primitives::Rectangle};
 use nom::{
-    bytes::complete::{tag, take_until, take_while},
+    bytes::complete::{tag, take_while},
     character::complete::{digit1, line_ending, multispace0, one_of, space0, space1},
-    combinator::map,
-    combinator::{map_opt, opt, recognize},
+    combinator::{map, map_opt, opt, recognize},
     multi::many0,
     sequence::{delimited, preceded, separated_pair},
     IResult, ParseTo,
@@ -54,19 +53,19 @@ impl Parse for u32 {
     }
 }
 
-fn comment(input: &str) -> IResult<&str, String> {
-    map_opt(
-        delimited(
-            tag("COMMENT"),
-            opt(preceded(space1, take_until("\n"))),
-            line_ending,
-        ),
-        |c: Option<&str>| c.map_or(Some(String::from("")), |c| c.parse_to()),
+fn comment(input: &str) -> IResult<&str, &str> {
+    delimited(
+        tag("COMMENT"),
+        preceded(space0, take_until_line_ending),
+        line_ending,
     )(input)
 }
 
-pub fn optional_comments(input: &str) -> IResult<&str, Vec<String>> {
-    preceded(multispace0, many0(comment))(input)
+pub fn skip_comments<'a, F, O>(inner: F) -> impl Fn(&'a str) -> IResult<&'a str, O>
+where
+    F: Fn(&'a str) -> IResult<&'a str, O>,
+{
+    delimited(many0(comment), inner, many0(comment))
 }
 
 fn take_until_line_ending(input: &str) -> IResult<&str, &str> {
@@ -114,9 +113,9 @@ mod tests {
         let comment_text = "COMMENT test text\n";
         let out = comment(comment_text);
 
-        assert_eq!(out, Ok(("", "test text".to_string())));
+        assert_eq!(out, Ok(("", "test text")));
 
         // EMPTY comments
-        assert_eq!(comment("COMMENT\n"), Ok(("", "".to_string())));
+        assert_eq!(comment("COMMENT\n"), Ok(("", "")));
     }
 }
