@@ -70,18 +70,7 @@ pub fn read(path: &Path) -> String {
 pub fn test_font_parse(filepath: &Path) -> Result<(), String> {
     let bdf = read(filepath);
 
-    let parser = BdfParser::from_str(&bdf);
-
-    let out = parser.parse();
-
-    match out {
-        Ok((rest, _parsed)) => {
-            if rest.len() > 0 {
-                Err(format!("{} remaining bytes to parse", rest.len()))
-            } else {
-                Ok(())
-            }
-        }
-        _ => Err(format!("Other error")),
-    }
+    BdfFont::from_str(&bdf)
+        .map(|_| ())
+        .map_err(|_| "Unknown error".to_string())
 }

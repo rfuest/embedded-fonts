@@ -16,15 +16,15 @@ pub struct Metadata {
     pub resolution: (u32, u32),
     pub bounding_box: Rectangle,
 }
-fn metadata_version(input: &[u8]) -> IResult<&[u8], f32> {
+fn metadata_version(input: &str) -> IResult<&str, f32> {
     map_res(statement("STARTFONT", String::parse), |text| text.parse())(input)
 }
 
-fn metadata_name(input: &[u8]) -> IResult<&[u8], String> {
+fn metadata_name(input: &str) -> IResult<&str, String> {
     statement("FONT", String::parse)(input)
 }
 
-fn metadata_size(input: &[u8]) -> IResult<&[u8], (i32, (u32, u32))> {
+fn metadata_size(input: &str) -> IResult<&str, (i32, (u32, u32))> {
     statement(
         "SIZE",
         separated_pair(
@@ -35,11 +35,11 @@ fn metadata_size(input: &[u8]) -> IResult<&[u8], (i32, (u32, u32))> {
     )(input)
 }
 
-fn metadata_bounding_box(input: &[u8]) -> IResult<&[u8], Rectangle> {
+fn metadata_bounding_box(input: &str) -> IResult<&str, Rectangle> {
     statement("FONTBOUNDINGBOX", Rectangle::parse)(input)
 }
 
-pub fn header(input: &[u8]) -> IResult<&[u8], Metadata> {
+pub fn header(input: &str) -> IResult<&str, Metadata> {
     let (input, version) = preceded(optional_comments, metadata_version)(input)?;
     let (input, name) = preceded(optional_comments, metadata_name)(input)?;
     let (input, (point_size, resolution)) = preceded(optional_comments, metadata_size)(input)?;
@@ -64,14 +64,12 @@ mod tests {
     use super::*;
     use embedded_graphics::geometry::{Point, Size};
 
-    const EMPTY: &[u8] = &[];
-
     #[test]
     fn it_parses_the_font_version() {
-        assert_eq!(metadata_version(b"STARTFONT 2.1\n"), Ok((EMPTY, 2.1f32)));
+        assert_eq!(metadata_version("STARTFONT 2.1\n"), Ok(("", 2.1f32)));
 
         // Some fonts are a bit overzealous with their whitespace
-        assert_eq!(metadata_version(b"STARTFONT   2.1\n"), Ok((EMPTY, 2.1f32)));
+        assert_eq!(metadata_version("STARTFONT   2.1\n"), Ok(("", 2.1f32)));
     }
 
     #[test]
@@ -82,9 +80,9 @@ SIZE 16 75 75
 FONTBOUNDINGBOX 16 24 0 0"#;
 
         assert_eq!(
-            header(input.as_bytes()),
+            header(input),
             Ok((
-                EMPTY,
+                "",
                 Metadata {
                     version: 2.1,
                     name: String::from("\"test font\""),

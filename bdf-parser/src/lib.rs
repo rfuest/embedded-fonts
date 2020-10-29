@@ -21,21 +21,21 @@ pub struct BdfFont {
     properties: Option<Properties>,
 }
 
-pub struct BdfParser<'a> {
-    source: &'a str,
+impl BdfFont {
+    //TODO: better error type
+    pub fn from_str(source: &str) -> Result<Self, ()> {
+        let (remaining_input, font) = parse_bdf(source).map_err(|_| ())?;
+
+        //TODO: can this happen?
+        if !remaining_input.is_empty() {
+            return Err(());
+        }
+
+        Ok(font)
+    }
 }
 
-impl<'a> BdfParser<'a> {
-    pub fn from_str(source: &'a str) -> Self {
-        Self { source }
-    }
-
-    pub fn parse(&self) -> IResult<&[u8], BdfFont> {
-        bdf(&self.source.as_bytes())
-    }
-}
-
-fn bdf(input: &[u8]) -> IResult<&[u8], BdfFont> {
+fn parse_bdf(input: &str) -> IResult<&str, BdfFont> {
     let (input, metadata) = opt(header)(input)?;
     let (input, _) = multispace0(input)?;
     let (input, properties) = opt(properties)(input)?;
@@ -63,11 +63,8 @@ extern crate maplit;
 
 #[cfg(test)]
 mod tests {
-    use embedded_graphics::{prelude::Point, prelude::Size, primitives::Rectangle};
-
     use super::*;
-
-    const EMPTY: &[u8] = &[];
+    use embedded_graphics::{prelude::Point, prelude::Size, primitives::Rectangle};
 
     #[test]
     fn it_parses_a_font_file() {
@@ -99,12 +96,12 @@ ENDCHAR
 ENDFONT
 "#;
 
-        let out = bdf(&chardata.as_bytes());
+        let out = parse_bdf(chardata);
 
         assert_eq!(
             out,
             Ok((
-                EMPTY,
+                "",
                 BdfFont {
                     metadata: Some(Metadata {
                         version: 2.1,
@@ -170,12 +167,12 @@ BITMAP
 ENDCHAR
 "#;
 
-        let out = bdf(&chardata.as_bytes());
+        let out = parse_bdf(chardata);
 
         assert_eq!(
             out,
             Ok((
-                EMPTY,
+                "",
                 BdfFont {
                     metadata: Some(Metadata {
                         version: 2.1,
@@ -215,12 +212,12 @@ ENDCHAR
     #[test]
     fn it_handles_windows_line_endings() {
         let windows_line_endings = "STARTFONT 2.1\r\nFONT \"windows_test\"\r\nSIZE 10 96 96\r\nFONTBOUNDINGBOX 8 16 0 -4\r\nCHARS 256\r\nSTARTCHAR 0\r\nENCODING 0\r\nSWIDTH 600 0\r\nDWIDTH 8 0\r\nBBX 8 16 0 -4\r\nBITMAP\r\nD5\r\nENDCHAR\r\nENDFONT\r\n";
-        let out = bdf(&windows_line_endings.as_bytes());
+        let out = parse_bdf(windows_line_endings);
 
         assert_eq!(
             out,
             Ok((
-                EMPTY,
+                "",
                 BdfFont {
                     metadata: Some(Metadata {
                         version: 2.1,

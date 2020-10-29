@@ -21,7 +21,7 @@ pub struct Glyph {
     pub device_width: Option<Size>,
 }
 
-fn parse_bitmap(input: &[u8]) -> IResult<&[u8], Vec<u32>> {
+fn parse_bitmap(input: &str) -> IResult<&str, Vec<u32>> {
     let (input, _) = multispace0(input)?;
     let (input, glyph_data) =
         delimited(tag("BITMAP"), take_until("ENDCHAR"), tag("ENDCHAR"))(input)?;
@@ -29,7 +29,7 @@ fn parse_bitmap(input: &[u8]) -> IResult<&[u8], Vec<u32>> {
     Ok((
         input,
         glyph_data
-            .to_vec()
+            .as_bytes()
             .iter()
             .filter(|d| is_hex_digit(**d))
             .collect::<Vec<&u8>>()
@@ -48,13 +48,13 @@ fn parse_bitmap(input: &[u8]) -> IResult<&[u8], Vec<u32>> {
     ))
 }
 
-fn parse_encoding(input: &[u8]) -> IResult<&[u8], Option<char>> {
+fn parse_encoding(input: &str) -> IResult<&str, Option<char>> {
     map(i32::parse, |code| {
         u32::try_from(code).ok().and_then(std::char::from_u32)
     })(input)
 }
 
-pub fn glyph(input: &[u8]) -> IResult<&[u8], Glyph> {
+pub fn glyph(input: &str) -> IResult<&str, Glyph> {
     let (input, name) = statement("STARTCHAR", String::parse)(input)?;
     let (input, encoding) = statement("ENCODING", parse_encoding)(input)?;
     let (input, scalable_width) = opt(statement("SWIDTH", Size::parse))(input)?;
@@ -77,44 +77,41 @@ pub fn glyph(input: &[u8]) -> IResult<&[u8], Glyph> {
 
 #[cfg(test)]
 mod tests {
-    use embedded_graphics::prelude::{Point, Size};
-
     use super::*;
-
-    const EMPTY: &[u8] = &[];
+    use embedded_graphics::prelude::{Point, Size};
 
     #[test]
     fn it_parses_bitmap_data() {
         assert_eq!(
-            parse_bitmap(b"BITMAP\n7e\nENDCHAR".as_ref()),
-            Ok((EMPTY, vec![0x7e]))
+            parse_bitmap("BITMAP\n7e\nENDCHAR".as_ref()),
+            Ok(("", vec![0x7e]))
         );
         assert_eq!(
-            parse_bitmap(b"BITMAP\nff\nENDCHAR".as_ref()),
-            Ok((EMPTY, vec![255]))
+            parse_bitmap("BITMAP\nff\nENDCHAR".as_ref()),
+            Ok(("", vec![255]))
         );
         assert_eq!(
-            parse_bitmap(b"BITMAP\nCCCC\nENDCHAR".as_ref()),
-            Ok((EMPTY, vec![0xcccc]))
+            parse_bitmap("BITMAP\nCCCC\nENDCHAR".as_ref()),
+            Ok(("", vec![0xcccc]))
         );
         assert_eq!(
-            parse_bitmap(b"BITMAP\nffffffff\nENDCHAR".as_ref()),
-            Ok((EMPTY, vec![0xffffffff]))
+            parse_bitmap("BITMAP\nffffffff\nENDCHAR".as_ref()),
+            Ok(("", vec![0xffffffff]))
         );
         assert_eq!(
-            parse_bitmap(b"BITMAP\nffffffff\naaaaaaaa\nENDCHAR".as_ref()),
-            Ok((EMPTY, vec![0xffffffff, 0xaaaaaaaa]))
+            parse_bitmap("BITMAP\nffffffff\naaaaaaaa\nENDCHAR".as_ref()),
+            Ok(("", vec![0xffffffff, 0xaaaaaaaa]))
         );
         assert_eq!(
-            parse_bitmap(b"BITMAP\nff\nff\nff\nff\naa\naa\naa\naa\nENDCHAR".as_ref()),
-            Ok((EMPTY, vec![0xffffffff, 0xaaaaaaaa]))
+            parse_bitmap("BITMAP\nff\nff\nff\nff\naa\naa\naa\naa\nENDCHAR".as_ref()),
+            Ok(("", vec![0xffffffff, 0xaaaaaaaa]))
         );
         assert_eq!(
             parse_bitmap(
-                b"BITMAP\n00\n00\n00\n00\n18\n24\n24\n42\n42\n7E\n42\n42\n42\n42\n00\n00\nENDCHAR"
+                "BITMAP\n00\n00\n00\n00\n18\n24\n24\n42\n42\n7E\n42\n42\n42\n42\n00\n00\nENDCHAR"
                     .as_ref()
             ),
-            Ok((EMPTY, vec![0x00000000, 0x18242442, 0x427e4242, 0x42420000]))
+            Ok(("", vec![0x00000000, 0x18242442, 0x427e4242, 0x42420000]))
         );
     }
 
@@ -144,12 +141,12 @@ BITMAP
 00
 ENDCHAR"#;
 
-        let out = glyph(chardata.as_bytes());
+        let out = glyph(chardata);
 
         assert_eq!(
             out,
             Ok((
-                EMPTY,
+                "",
                 Glyph {
                     name: "ZZZZ".to_string(),
                     encoding: Some('A'), //65
@@ -172,12 +169,12 @@ BBX 0 0 0 0
 BITMAP
 ENDCHAR"#;
 
-        let out = glyph(chardata.as_bytes());
+        let out = glyph(chardata);
 
         assert_eq!(
             out,
             Ok((
-                EMPTY,
+                "",
                 Glyph {
                     bitmap: vec![],
                     bounding_box: Rectangle::new(Point::zero(), Size::zero()),
@@ -200,12 +197,12 @@ BBX 0 0 0 0
 BITMAP
 ENDCHAR"#;
 
-        let out = glyph(chardata.as_bytes());
+        let out = glyph(chardata);
 
         assert_eq!(
             out,
             Ok((
-                EMPTY,
+                "",
                 Glyph {
                     bitmap: vec![],
                     bounding_box: Rectangle::new(Point::zero(), Size::zero()),
