@@ -112,7 +112,7 @@ ENDFONT
                     }),
                     glyphs: vec![
                         Glyph {
-                            bitmap: vec![0x1f01],
+                            bitmap: vec![0x1f, 0x01],
                             bounding_box: Rectangle::new(Point::zero(), Size::new(8, 8)),
                             encoding: Some('@'), //64
                             name: "000".to_string(),
@@ -120,7 +120,7 @@ ENDFONT
                             device_width: Some(Size::new(8, 0)),
                         },
                         Glyph {
-                            bitmap: vec![0x2f02],
+                            bitmap: vec![0x2f, 0x02],
                             bounding_box: Rectangle::new(Point::zero(), Size::new(8, 8)),
                             encoding: Some('@'), //64
                             name: "000".to_string(),
@@ -183,7 +183,7 @@ ENDCHAR
                     }),
                     glyphs: vec![
                         Glyph {
-                            bitmap: vec![0x1f01],
+                            bitmap: vec![0x1f, 0x01],
                             bounding_box: Rectangle::new(Point::zero(), Size::new(8, 8)),
                             encoding: Some('@'), //64
                             name: "000".to_string(),
@@ -191,7 +191,7 @@ ENDCHAR
                             device_width: Some(Size::new(8, 0)),
                         },
                         Glyph {
-                            bitmap: vec![0x2f02],
+                            bitmap: vec![0x2f, 0x02],
                             bounding_box: Rectangle::new(Point::zero(), Size::new(8, 8)),
                             encoding: Some('@'), //64
                             name: "000".to_string(),
