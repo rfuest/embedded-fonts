@@ -15,27 +15,27 @@ use metadata::*;
 use properties::*;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct BDFFont {
+pub struct BdfFont {
     metadata: Option<Metadata>,
     glyphs: Vec<Glyph>,
     properties: Option<Properties>,
 }
 
-pub struct BDFParser<'a> {
+pub struct BdfParser<'a> {
     source: &'a str,
 }
 
-impl<'a> BDFParser<'a> {
+impl<'a> BdfParser<'a> {
     pub fn from_str(source: &'a str) -> Self {
         Self { source }
     }
 
-    pub fn parse(&self) -> IResult<&[u8], BDFFont> {
+    pub fn parse(&self) -> IResult<&[u8], BdfFont> {
         bdf(&self.source.as_bytes())
     }
 }
 
-fn bdf(input: &[u8]) -> IResult<&[u8], BDFFont> {
+fn bdf(input: &[u8]) -> IResult<&[u8], BdfFont> {
     let (input, metadata) = opt(header)(input)?;
     let (input, _) = multispace0(input)?;
     let (input, properties) = opt(properties)(input)?;
@@ -49,7 +49,7 @@ fn bdf(input: &[u8]) -> IResult<&[u8], BDFFont> {
 
     Ok((
         input,
-        BDFFont {
+        BdfFont {
             properties,
             metadata,
             glyphs,
@@ -105,7 +105,7 @@ ENDFONT
             out,
             Ok((
                 EMPTY,
-                BDFFont {
+                BdfFont {
                     metadata: Some(Metadata {
                         version: 2.1,
                         name: String::from("\"test font\""),
@@ -176,7 +176,7 @@ ENDCHAR
             out,
             Ok((
                 EMPTY,
-                BDFFont {
+                BdfFont {
                     metadata: Some(Metadata {
                         version: 2.1,
                         name: String::from("\"open_iconic_all_1x\""),
@@ -221,7 +221,7 @@ ENDCHAR
             out,
             Ok((
                 EMPTY,
-                BDFFont {
+                BdfFont {
                     metadata: Some(Metadata {
                         version: 2.1,
                         name: String::from("\"windows_test\""),
