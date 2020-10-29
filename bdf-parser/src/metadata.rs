@@ -1,10 +1,12 @@
-use super::{helpers::*, BoundingBox};
+use embedded_graphics::primitives::Rectangle;
 use nom::{
     character::complete::{multispace0, space1},
     combinator::map_opt,
     sequence::{preceded, separated_pair},
     IResult, ParseTo,
 };
+
+use crate::helpers::*;
 
 pub type FontSize = (i32, (u32, u32));
 
@@ -13,7 +15,7 @@ pub struct Metadata {
     pub version: f32,
     pub name: String,
     pub size: FontSize,
-    pub bounding_box: BoundingBox,
+    pub bounding_box: Rectangle,
 }
 fn metadata_version(input: &[u8]) -> IResult<&[u8], f32> {
     map_opt(
@@ -33,11 +35,8 @@ fn metadata_size(input: &[u8]) -> IResult<&[u8], FontSize> {
     statement("SIZE", separated_pair(parse_to_i32, space1, unsigned_xy))(input)
 }
 
-fn metadata_bounding_box(input: &[u8]) -> IResult<&[u8], BoundingBox> {
-    statement(
-        "FONTBOUNDINGBOX",
-        separated_pair(unsigned_xy, space1, signed_xy),
-    )(input)
+fn metadata_bounding_box(input: &[u8]) -> IResult<&[u8], Rectangle> {
+    statement("FONTBOUNDINGBOX", bounding_box)(input)
 }
 
 pub fn header(input: &[u8]) -> IResult<&[u8], Metadata> {
@@ -62,6 +61,7 @@ pub fn header(input: &[u8]) -> IResult<&[u8], Metadata> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use embedded_graphics::geometry::{Point, Size};
 
     const EMPTY: &[u8] = &[];
 
@@ -88,7 +88,7 @@ FONTBOUNDINGBOX 16 24 0 0"#;
                     version: 2.1,
                     name: String::from("\"test font\""),
                     size: (16, (75, 75)),
-                    bounding_box: ((16, 24), (0, 0))
+                    bounding_box: Rectangle::new(Point::zero(), Size::new(16, 24))
                 }
             ))
         );

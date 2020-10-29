@@ -1,6 +1,8 @@
+use embedded_graphics::{prelude::*, primitives::Rectangle};
 use nom::{
     bytes::complete::{tag, take_until, take_while},
     character::complete::{digit1, line_ending, multispace0, one_of, space0, space1},
+    combinator::map,
     combinator::{map_opt, opt, recognize},
     multi::many0,
     sequence::{delimited, preceded, separated_pair},
@@ -69,6 +71,18 @@ pub fn signed_xy(input: &[u8]) -> IResult<&[u8], (i32, i32)> {
 
 pub fn unsigned_xy(input: &[u8]) -> IResult<&[u8], (u32, u32)> {
     separated_pair(parse_to_u32, space1, parse_to_u32)(input)
+}
+
+pub fn bounding_box(input: &[u8]) -> IResult<&[u8], Rectangle> {
+    map(
+        separated_pair(unsigned_xy, space1, signed_xy),
+        |(size, position)| {
+            Rectangle::new(
+                Point::new(position.0, position.1),
+                Size::new(size.0, size.1),
+            )
+        },
+    )(input)
 }
 
 #[cfg(test)]

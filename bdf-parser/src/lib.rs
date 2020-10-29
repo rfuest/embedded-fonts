@@ -14,8 +14,6 @@ use helpers::*;
 use metadata::*;
 use properties::*;
 
-pub type BoundingBox = ((u32, u32), (i32, i32));
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct BDFFont {
     metadata: Option<Metadata>,
@@ -65,6 +63,8 @@ extern crate maplit;
 
 #[cfg(test)]
 mod tests {
+    use embedded_graphics::{prelude::Point, prelude::Size, primitives::Rectangle};
+
     use super::*;
 
     const EMPTY: &[u8] = &[];
@@ -110,18 +110,18 @@ ENDFONT
                         version: 2.1,
                         name: String::from("\"test font\""),
                         size: (16, (75, 75)),
-                        bounding_box: ((16, 24), (0, 0)),
+                        bounding_box: Rectangle::new(Point::zero(), Size::new(16, 24)),
                     }),
                     glyphs: vec![
                         Glyph {
                             bitmap: vec![0x1f01],
-                            bounding_box: ((8, 8), (0, 0)),
+                            bounding_box: Rectangle::new(Point::zero(), Size::new(8, 8)),
                             charcode: 64,
                             name: "000".to_string(),
                         },
                         Glyph {
                             bitmap: vec![0x2f02],
-                            bounding_box: ((8, 8), (0, 0)),
+                            bounding_box: Rectangle::new(Point::zero(), Size::new(8, 8)),
                             charcode: 64,
                             name: "000".to_string(),
                         },
@@ -176,18 +176,18 @@ ENDCHAR
                         version: 2.1,
                         name: String::from("\"open_iconic_all_1x\""),
                         size: (16, (75, 75)),
-                        bounding_box: ((16, 16), (0, 0)),
+                        bounding_box: Rectangle::new(Point::zero(), Size::new(16, 16)),
                     }),
                     glyphs: vec![
                         Glyph {
                             bitmap: vec![0x1f01],
-                            bounding_box: ((8, 8), (0, 0)),
+                            bounding_box: Rectangle::new(Point::zero(), Size::new(8, 8)),
                             charcode: 64,
                             name: "000".to_string(),
                         },
                         Glyph {
                             bitmap: vec![0x2f02],
-                            bounding_box: ((8, 8), (0, 0)),
+                            bounding_box: Rectangle::new(Point::zero(), Size::new(8, 8)),
                             charcode: 64,
                             name: "000".to_string(),
                         },
@@ -216,11 +216,11 @@ ENDCHAR
                         version: 2.1,
                         name: String::from("\"windows_test\""),
                         size: (10, (96, 96)),
-                        bounding_box: ((8, 16), (0, -4)),
+                        bounding_box: Rectangle::new(Point::new(0, -4), Size::new(8, 16)),
                     }),
                     glyphs: vec![Glyph {
                         bitmap: vec![0xd5],
-                        bounding_box: ((8, 16), (0, -4)),
+                        bounding_box: Rectangle::new(Point::new(0, -4), Size::new(8, 16)),
                         charcode: 0,
                         name: "0".to_string(),
                     },],

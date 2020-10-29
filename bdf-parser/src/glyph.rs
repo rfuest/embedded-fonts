@@ -1,12 +1,13 @@
+use embedded_graphics::primitives::Rectangle;
 use nom::{
     bytes::complete::{tag, take_until},
-    character::{complete::multispace0, is_hex_digit, streaming::space1},
+    character::{complete::multispace0, is_hex_digit},
     combinator::{map_opt, opt},
-    sequence::{delimited, separated_pair},
+    sequence::delimited,
     IResult, ParseTo,
 };
 
-use super::{helpers::*, BoundingBox};
+use super::helpers::*;
 
 type Vec2 = (u32, u32);
 
@@ -14,7 +15,7 @@ type Vec2 = (u32, u32);
 pub struct Glyph {
     pub name: String,
     pub charcode: i32,
-    pub bounding_box: BoundingBox,
+    pub bounding_box: Rectangle,
     pub bitmap: Vec<u32>,
 }
 
@@ -37,8 +38,8 @@ fn glyph_swidth(input: &[u8]) -> IResult<&[u8], Vec2> {
     statement("SWIDTH", unsigned_xy)(input)
 }
 
-fn glyph_bounding_box(input: &[u8]) -> IResult<&[u8], BoundingBox> {
-    statement("BBX", separated_pair(unsigned_xy, space1, signed_xy))(input)
+fn glyph_bounding_box(input: &[u8]) -> IResult<&[u8], Rectangle> {
+    statement("BBX", bounding_box)(input)
 }
 
 fn glyph_bitmap(input: &[u8]) -> IResult<&[u8], Vec<u32>> {
@@ -89,6 +90,8 @@ pub fn glyph(input: &[u8]) -> IResult<&[u8], Glyph> {
 
 #[cfg(test)]
 mod tests {
+    use embedded_graphics::prelude::{Point, Size};
+
     use super::*;
 
     const EMPTY: &[u8] = &[];
@@ -164,7 +167,7 @@ ENDCHAR"#;
                     name: "ZZZZ".to_string(),
                     charcode: 65,
                     bitmap: vec![0x00000000, 0x18242442, 0x427e4242, 0x42420000],
-                    bounding_box: ((8, 16), (0, -2)),
+                    bounding_box: Rectangle::new(Point::new(0, -2), Size::new(8, 16)),
                 }
             ))
         );
@@ -188,7 +191,7 @@ ENDCHAR"#;
                 EMPTY,
                 Glyph {
                     bitmap: vec![],
-                    bounding_box: ((0, 0), (0, 0)),
+                    bounding_box: Rectangle::new(Point::zero(), Size::zero()),
                     charcode: -1i32,
                     name: "000".to_string(),
                 }
@@ -214,7 +217,7 @@ ENDCHAR"#;
                 EMPTY,
                 Glyph {
                     bitmap: vec![],
-                    bounding_box: ((0, 0), (0, 0)),
+                    bounding_box: Rectangle::new(Point::zero(), Size::zero()),
                     charcode: 0,
                     name: "000".to_string(),
                 }
