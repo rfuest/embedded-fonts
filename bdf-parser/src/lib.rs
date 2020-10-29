@@ -40,7 +40,7 @@ fn bdf(input: &[u8]) -> IResult<&[u8], BDFFont> {
     let (input, _) = multispace0(input)?;
     let (input, properties) = opt(properties)(input)?;
     let (input, _) = multispace0(input)?;
-    let (input, _) = opt(numchars)(input)?;
+    let (input, _) = opt(statement("CHARS", u32::parse))(input)?;
     let (input, _) = multispace0(input)?;
     let (input, glyphs) = many0(glyph)(input)?;
     let (input, _) = multispace0(input)?;
@@ -109,7 +109,8 @@ ENDFONT
                     metadata: Some(Metadata {
                         version: 2.1,
                         name: String::from("\"test font\""),
-                        size: (16, (75, 75)),
+                        point_size: 16,
+                        resolution: (75, 75),
                         bounding_box: Rectangle::new(Point::zero(), Size::new(16, 24)),
                     }),
                     glyphs: vec![
@@ -118,12 +119,16 @@ ENDFONT
                             bounding_box: Rectangle::new(Point::zero(), Size::new(8, 8)),
                             charcode: 64,
                             name: "000".to_string(),
+                            scalable_width: None,
+                            device_width: Some(Size::new(8, 0)),
                         },
                         Glyph {
                             bitmap: vec![0x2f02],
                             bounding_box: Rectangle::new(Point::zero(), Size::new(8, 8)),
                             charcode: 64,
                             name: "000".to_string(),
+                            scalable_width: None,
+                            device_width: Some(Size::new(8, 0)),
                         },
                     ],
                     properties: Some(hashmap! {
@@ -175,7 +180,8 @@ ENDCHAR
                     metadata: Some(Metadata {
                         version: 2.1,
                         name: String::from("\"open_iconic_all_1x\""),
-                        size: (16, (75, 75)),
+                        point_size: 16,
+                        resolution: (75, 75),
                         bounding_box: Rectangle::new(Point::zero(), Size::new(16, 16)),
                     }),
                     glyphs: vec![
@@ -184,12 +190,16 @@ ENDCHAR
                             bounding_box: Rectangle::new(Point::zero(), Size::new(8, 8)),
                             charcode: 64,
                             name: "000".to_string(),
+                            scalable_width: None,
+                            device_width: Some(Size::new(8, 0)),
                         },
                         Glyph {
                             bitmap: vec![0x2f02],
                             bounding_box: Rectangle::new(Point::zero(), Size::new(8, 8)),
                             charcode: 64,
                             name: "000".to_string(),
+                            scalable_width: None,
+                            device_width: Some(Size::new(8, 0)),
                         },
                     ],
                     properties: Some(hashmap! {
@@ -215,7 +225,8 @@ ENDCHAR
                     metadata: Some(Metadata {
                         version: 2.1,
                         name: String::from("\"windows_test\""),
-                        size: (10, (96, 96)),
+                        point_size: 10,
+                        resolution: (96, 96),
                         bounding_box: Rectangle::new(Point::new(0, -4), Size::new(8, 16)),
                     }),
                     glyphs: vec![Glyph {
@@ -223,6 +234,8 @@ ENDCHAR
                         bounding_box: Rectangle::new(Point::new(0, -4), Size::new(8, 16)),
                         charcode: 0,
                         name: "0".to_string(),
+                        scalable_width: Some(Size::new(600, 0)),
+                        device_width: Some(Size::new(8, 0)),
                     },],
                     properties: None
                 }

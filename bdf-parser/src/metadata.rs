@@ -1,48 +1,48 @@
-use embedded_graphics::primitives::Rectangle;
+use embedded_graphics::{prelude::*, primitives::Rectangle};
 use nom::{
     character::complete::{multispace0, space1},
-    combinator::map_opt,
+    combinator::{map, map_res},
     sequence::{preceded, separated_pair},
-    IResult, ParseTo,
+    IResult,
 };
 
 use crate::helpers::*;
-
-pub type FontSize = (i32, (u32, u32));
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Metadata {
     pub version: f32,
     pub name: String,
-    pub size: FontSize,
+    pub point_size: i32,
+    pub resolution: (u32, u32),
     pub bounding_box: Rectangle,
 }
 fn metadata_version(input: &[u8]) -> IResult<&[u8], f32> {
-    map_opt(
-        statement("STARTFONT", take_until_line_ending),
-        |v: &[u8]| v.parse_to(),
-    )(input)
+    map_res(statement("STARTFONT", String::parse), |text| text.parse())(input)
 }
 
 fn metadata_name(input: &[u8]) -> IResult<&[u8], String> {
-    map_opt(
-        statement("FONT", take_until_line_ending),
-        |name: &[u8]| name.parse_to(),
+    statement("FONT", String::parse)(input)
+}
+
+fn metadata_size(input: &[u8]) -> IResult<&[u8], (i32, (u32, u32))> {
+    statement(
+        "SIZE",
+        separated_pair(
+            i32::parse,
+            space1,
+            map(Size::parse, |size| (size.width, size.height)),
+        ),
     )(input)
 }
 
-fn metadata_size(input: &[u8]) -> IResult<&[u8], FontSize> {
-    statement("SIZE", separated_pair(parse_to_i32, space1, unsigned_xy))(input)
-}
-
 fn metadata_bounding_box(input: &[u8]) -> IResult<&[u8], Rectangle> {
-    statement("FONTBOUNDINGBOX", bounding_box)(input)
+    statement("FONTBOUNDINGBOX", Rectangle::parse)(input)
 }
 
 pub fn header(input: &[u8]) -> IResult<&[u8], Metadata> {
     let (input, version) = preceded(optional_comments, metadata_version)(input)?;
     let (input, name) = preceded(optional_comments, metadata_name)(input)?;
-    let (input, size) = preceded(optional_comments, metadata_size)(input)?;
+    let (input, (point_size, resolution)) = preceded(optional_comments, metadata_size)(input)?;
     let (input, bounding_box) = preceded(optional_comments, metadata_bounding_box)(input)?;
     let (input, _) = optional_comments(input)?;
     let (input, _) = multispace0(input)?;
@@ -52,7 +52,8 @@ pub fn header(input: &[u8]) -> IResult<&[u8], Metadata> {
         Metadata {
             version,
             name,
-            size,
+            point_size,
+            resolution,
             bounding_box,
         },
     ))
@@ -87,7 +88,8 @@ FONTBOUNDINGBOX 16 24 0 0"#;
                 Metadata {
                     version: 2.1,
                     name: String::from("\"test font\""),
-                    size: (16, (75, 75)),
+                    point_size: 16,
+                    resolution: (75, 75),
                     bounding_box: Rectangle::new(Point::zero(), Size::new(16, 24))
                 }
             ))

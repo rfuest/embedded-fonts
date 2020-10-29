@@ -1,15 +1,13 @@
-use embedded_graphics::primitives::Rectangle;
+use embedded_graphics::{prelude::*, primitives::Rectangle};
 use nom::{
     bytes::complete::{tag, take_until},
     character::{complete::multispace0, is_hex_digit},
-    combinator::{map_opt, opt},
+    combinator::opt,
     sequence::delimited,
-    IResult, ParseTo,
+    IResult,
 };
 
 use super::helpers::*;
-
-type Vec2 = (u32, u32);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Glyph {
@@ -17,29 +15,8 @@ pub struct Glyph {
     pub charcode: i32,
     pub bounding_box: Rectangle,
     pub bitmap: Vec<u32>,
-}
-
-fn glyph_startchar(input: &[u8]) -> IResult<&[u8], String> {
-    statement(
-        "STARTCHAR",
-        map_opt(take_until_line_ending, |name| name.parse_to()),
-    )(input)
-}
-
-fn glyph_charcode(input: &[u8]) -> IResult<&[u8], i32> {
-    statement("ENCODING", parse_to_i32)(input)
-}
-
-fn glyph_dwidth(input: &[u8]) -> IResult<&[u8], Vec2> {
-    statement("DWIDTH", unsigned_xy)(input)
-}
-
-fn glyph_swidth(input: &[u8]) -> IResult<&[u8], Vec2> {
-    statement("SWIDTH", unsigned_xy)(input)
-}
-
-fn glyph_bounding_box(input: &[u8]) -> IResult<&[u8], Rectangle> {
-    statement("BBX", bounding_box)(input)
+    pub scalable_width: Option<Size>,
+    pub device_width: Option<Size>,
 }
 
 fn glyph_bitmap(input: &[u8]) -> IResult<&[u8], Vec<u32>> {
@@ -70,11 +47,11 @@ fn glyph_bitmap(input: &[u8]) -> IResult<&[u8], Vec<u32>> {
 }
 
 pub fn glyph(input: &[u8]) -> IResult<&[u8], Glyph> {
-    let (input, name) = glyph_startchar(input)?;
-    let (input, charcode) = glyph_charcode(input)?;
-    let (input, _) = opt(glyph_swidth)(input)?;
-    let (input, _) = opt(glyph_dwidth)(input)?;
-    let (input, bounding_box) = glyph_bounding_box(input)?;
+    let (input, name) = statement("STARTCHAR", String::parse)(input)?;
+    let (input, charcode) = statement("ENCODING", i32::parse)(input)?;
+    let (input, scalable_width) = opt(statement("SWIDTH", Size::parse))(input)?;
+    let (input, device_width) = opt(statement("DWIDTH", Size::parse))(input)?;
+    let (input, bounding_box) = statement("BBX", Rectangle::parse)(input)?;
     let (input, bitmap) = glyph_bitmap(input)?;
 
     Ok((
@@ -84,6 +61,8 @@ pub fn glyph(input: &[u8]) -> IResult<&[u8], Glyph> {
             bounding_box,
             charcode,
             name,
+            scalable_width,
+            device_width,
         },
     ))
 }
@@ -168,6 +147,8 @@ ENDCHAR"#;
                     charcode: 65,
                     bitmap: vec![0x00000000, 0x18242442, 0x427e4242, 0x42420000],
                     bounding_box: Rectangle::new(Point::new(0, -2), Size::new(8, 16)),
+                    scalable_width: Some(Size::new(500, 0)),
+                    device_width: Some(Size::new(8, 0)),
                 }
             ))
         );
@@ -194,6 +175,8 @@ ENDCHAR"#;
                     bounding_box: Rectangle::new(Point::zero(), Size::zero()),
                     charcode: -1i32,
                     name: "000".to_string(),
+                    scalable_width: Some(Size::new(432, 0)),
+                    device_width: Some(Size::new(6, 0)),
                 }
             ))
         );
@@ -220,6 +203,8 @@ ENDCHAR"#;
                     bounding_box: Rectangle::new(Point::zero(), Size::zero()),
                     charcode: 0,
                     name: "000".to_string(),
+                    scalable_width: Some(Size::new(432, 0)),
+                    device_width: Some(Size::new(6, 0)),
                 }
             ))
         );

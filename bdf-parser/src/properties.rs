@@ -30,7 +30,7 @@ fn property_value_string(input: &[u8]) -> IResult<&[u8], PropertyValue> {
 }
 
 fn property_value_int(input: &[u8]) -> IResult<&[u8], PropertyValue> {
-    map(parse_to_i32, |i| PropertyValue::Int(i))(input)
+    map(i32::parse, |i| PropertyValue::Int(i))(input)
 }
 
 fn property_value(input: &[u8]) -> IResult<&[u8], PropertyValue> {

@@ -9,15 +9,50 @@ use nom::{
     IResult, ParseTo,
 };
 
-pub fn parse_to_i32(input: &[u8]) -> IResult<&[u8], i32> {
-    map_opt(
-        recognize(preceded(opt(one_of("+-")), digit1)),
-        |i: &[u8]| i.parse_to(),
-    )(input)
+pub trait Parse: Sized {
+    fn parse(input: &[u8]) -> IResult<&[u8], Self>;
 }
 
-pub fn parse_to_u32(input: &[u8]) -> IResult<&[u8], u32> {
-    map_opt(recognize(digit1), |i: &[u8]| i.parse_to())(input)
+impl Parse for Point {
+    fn parse(input: &[u8]) -> IResult<&[u8], Self> {
+        map(separated_pair(i32::parse, space1, i32::parse), Point::from)(input)
+    }
+}
+
+impl Parse for Size {
+    fn parse(input: &[u8]) -> IResult<&[u8], Self> {
+        map(separated_pair(u32::parse, space1, u32::parse), Size::from)(input)
+    }
+}
+
+impl Parse for Rectangle {
+    fn parse(input: &[u8]) -> IResult<&[u8], Self> {
+        map(
+            separated_pair(Size::parse, space1, Point::parse),
+            |(size, position)| Rectangle::new(position, size),
+        )(input)
+    }
+}
+
+impl Parse for String {
+    fn parse(input: &[u8]) -> IResult<&[u8], Self> {
+        map_opt(take_until_line_ending, |text: &[u8]| text.parse_to())(input)
+    }
+}
+
+impl Parse for i32 {
+    fn parse(input: &[u8]) -> IResult<&[u8], i32> {
+        map_opt(
+            recognize(preceded(opt(one_of("+-")), digit1)),
+            |i: &[u8]| i.parse_to(),
+        )(input)
+    }
+}
+
+impl Parse for u32 {
+    fn parse(input: &[u8]) -> IResult<&[u8], u32> {
+        map_opt(recognize(digit1), |i: &[u8]| i.parse_to())(input)
+    }
 }
 
 fn comment(input: &[u8]) -> IResult<&[u8], String> {
@@ -35,14 +70,7 @@ pub fn optional_comments(input: &[u8]) -> IResult<&[u8], Vec<String>> {
     preceded(multispace0, many0(comment))(input)
 }
 
-pub fn numchars(input: &[u8]) -> IResult<&[u8], u32> {
-    preceded(
-        space0,
-        preceded(tag("CHARS"), preceded(space0, parse_to_u32)),
-    )(input)
-}
-
-pub fn take_until_line_ending(input: &[u8]) -> IResult<&[u8], &[u8]> {
+fn take_until_line_ending(input: &[u8]) -> IResult<&[u8], &[u8]> {
     take_while(|c| c != b'\n' && c != b'\r')(input)
 }
 
@@ -63,26 +91,6 @@ where
 
         Ok((input, p))
     }
-}
-
-pub fn signed_xy(input: &[u8]) -> IResult<&[u8], (i32, i32)> {
-    separated_pair(parse_to_i32, space1, parse_to_i32)(input)
-}
-
-pub fn unsigned_xy(input: &[u8]) -> IResult<&[u8], (u32, u32)> {
-    separated_pair(parse_to_u32, space1, parse_to_u32)(input)
-}
-
-pub fn bounding_box(input: &[u8]) -> IResult<&[u8], Rectangle> {
-    map(
-        separated_pair(unsigned_xy, space1, signed_xy),
-        |(size, position)| {
-            Rectangle::new(
-                Point::new(position.0, position.1),
-                Size::new(size.0, size.1),
-            )
-        },
-    )(input)
 }
 
 #[cfg(test)]
