@@ -2,24 +2,26 @@ use embedded_graphics::{prelude::*, primitives::Rectangle};
 use nom::{
     bytes::complete::{tag, take_until},
     character::{complete::multispace0, is_hex_digit},
+    combinator::map,
     combinator::opt,
     sequence::delimited,
     IResult,
 };
+use std::convert::TryFrom;
 
 use super::helpers::*;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Glyph {
     pub name: String,
-    pub charcode: i32,
+    pub encoding: Option<char>,
     pub bounding_box: Rectangle,
     pub bitmap: Vec<u32>,
     pub scalable_width: Option<Size>,
     pub device_width: Option<Size>,
 }
 
-fn glyph_bitmap(input: &[u8]) -> IResult<&[u8], Vec<u32>> {
+fn parse_bitmap(input: &[u8]) -> IResult<&[u8], Vec<u32>> {
     let (input, _) = multispace0(input)?;
     let (input, glyph_data) =
         delimited(tag("BITMAP"), take_until("ENDCHAR"), tag("ENDCHAR"))(input)?;
@@ -46,20 +48,26 @@ fn glyph_bitmap(input: &[u8]) -> IResult<&[u8], Vec<u32>> {
     ))
 }
 
+fn parse_encoding(input: &[u8]) -> IResult<&[u8], Option<char>> {
+    map(i32::parse, |code| {
+        u32::try_from(code).ok().and_then(std::char::from_u32)
+    })(input)
+}
+
 pub fn glyph(input: &[u8]) -> IResult<&[u8], Glyph> {
     let (input, name) = statement("STARTCHAR", String::parse)(input)?;
-    let (input, charcode) = statement("ENCODING", i32::parse)(input)?;
+    let (input, encoding) = statement("ENCODING", parse_encoding)(input)?;
     let (input, scalable_width) = opt(statement("SWIDTH", Size::parse))(input)?;
     let (input, device_width) = opt(statement("DWIDTH", Size::parse))(input)?;
     let (input, bounding_box) = statement("BBX", Rectangle::parse)(input)?;
-    let (input, bitmap) = glyph_bitmap(input)?;
+    let (input, bitmap) = parse_bitmap(input)?;
 
     Ok((
         input,
         Glyph {
             bitmap,
             bounding_box,
-            charcode,
+            encoding,
             name,
             scalable_width,
             device_width,
@@ -78,31 +86,31 @@ mod tests {
     #[test]
     fn it_parses_bitmap_data() {
         assert_eq!(
-            glyph_bitmap(b"BITMAP\n7e\nENDCHAR".as_ref()),
+            parse_bitmap(b"BITMAP\n7e\nENDCHAR".as_ref()),
             Ok((EMPTY, vec![0x7e]))
         );
         assert_eq!(
-            glyph_bitmap(b"BITMAP\nff\nENDCHAR".as_ref()),
+            parse_bitmap(b"BITMAP\nff\nENDCHAR".as_ref()),
             Ok((EMPTY, vec![255]))
         );
         assert_eq!(
-            glyph_bitmap(b"BITMAP\nCCCC\nENDCHAR".as_ref()),
+            parse_bitmap(b"BITMAP\nCCCC\nENDCHAR".as_ref()),
             Ok((EMPTY, vec![0xcccc]))
         );
         assert_eq!(
-            glyph_bitmap(b"BITMAP\nffffffff\nENDCHAR".as_ref()),
+            parse_bitmap(b"BITMAP\nffffffff\nENDCHAR".as_ref()),
             Ok((EMPTY, vec![0xffffffff]))
         );
         assert_eq!(
-            glyph_bitmap(b"BITMAP\nffffffff\naaaaaaaa\nENDCHAR".as_ref()),
+            parse_bitmap(b"BITMAP\nffffffff\naaaaaaaa\nENDCHAR".as_ref()),
             Ok((EMPTY, vec![0xffffffff, 0xaaaaaaaa]))
         );
         assert_eq!(
-            glyph_bitmap(b"BITMAP\nff\nff\nff\nff\naa\naa\naa\naa\nENDCHAR".as_ref()),
+            parse_bitmap(b"BITMAP\nff\nff\nff\nff\naa\naa\naa\naa\nENDCHAR".as_ref()),
             Ok((EMPTY, vec![0xffffffff, 0xaaaaaaaa]))
         );
         assert_eq!(
-            glyph_bitmap(
+            parse_bitmap(
                 b"BITMAP\n00\n00\n00\n00\n18\n24\n24\n42\n42\n7E\n42\n42\n42\n42\n00\n00\nENDCHAR"
                     .as_ref()
             ),
@@ -144,7 +152,7 @@ ENDCHAR"#;
                 EMPTY,
                 Glyph {
                     name: "ZZZZ".to_string(),
-                    charcode: 65,
+                    encoding: Some('A'), //65
                     bitmap: vec![0x00000000, 0x18242442, 0x427e4242, 0x42420000],
                     bounding_box: Rectangle::new(Point::new(0, -2), Size::new(8, 16)),
                     scalable_width: Some(Size::new(500, 0)),
@@ -173,7 +181,7 @@ ENDCHAR"#;
                 Glyph {
                     bitmap: vec![],
                     bounding_box: Rectangle::new(Point::zero(), Size::zero()),
-                    charcode: -1i32,
+                    encoding: None,
                     name: "000".to_string(),
                     scalable_width: Some(Size::new(432, 0)),
                     device_width: Some(Size::new(6, 0)),
@@ -201,7 +209,7 @@ ENDCHAR"#;
                 Glyph {
                     bitmap: vec![],
                     bounding_box: Rectangle::new(Point::zero(), Size::zero()),
-                    charcode: 0,
+                    encoding: Some('\x00'),
                     name: "000".to_string(),
                     scalable_width: Some(Size::new(432, 0)),
                     device_width: Some(Size::new(6, 0)),

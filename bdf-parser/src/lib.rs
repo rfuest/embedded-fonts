@@ -117,7 +117,7 @@ ENDFONT
                         Glyph {
                             bitmap: vec![0x1f01],
                             bounding_box: Rectangle::new(Point::zero(), Size::new(8, 8)),
-                            charcode: 64,
+                            encoding: Some('@'), //64
                             name: "000".to_string(),
                             scalable_width: None,
                             device_width: Some(Size::new(8, 0)),
@@ -125,7 +125,7 @@ ENDFONT
                         Glyph {
                             bitmap: vec![0x2f02],
                             bounding_box: Rectangle::new(Point::zero(), Size::new(8, 8)),
-                            charcode: 64,
+                            encoding: Some('@'), //64
                             name: "000".to_string(),
                             scalable_width: None,
                             device_width: Some(Size::new(8, 0)),
@@ -188,7 +188,7 @@ ENDCHAR
                         Glyph {
                             bitmap: vec![0x1f01],
                             bounding_box: Rectangle::new(Point::zero(), Size::new(8, 8)),
-                            charcode: 64,
+                            encoding: Some('@'), //64
                             name: "000".to_string(),
                             scalable_width: None,
                             device_width: Some(Size::new(8, 0)),
@@ -196,7 +196,7 @@ ENDCHAR
                         Glyph {
                             bitmap: vec![0x2f02],
                             bounding_box: Rectangle::new(Point::zero(), Size::new(8, 8)),
-                            charcode: 64,
+                            encoding: Some('@'), //64
                             name: "000".to_string(),
                             scalable_width: None,
                             device_width: Some(Size::new(8, 0)),
@@ -232,7 +232,7 @@ ENDCHAR
                     glyphs: vec![Glyph {
                         bitmap: vec![0xd5],
                         bounding_box: Rectangle::new(Point::new(0, -4), Size::new(8, 16)),
-                        charcode: 0,
+                        encoding: Some('\x00'),
                         name: "0".to_string(),
                         scalable_width: Some(Size::new(600, 0)),
                         device_width: Some(Size::new(8, 0)),
