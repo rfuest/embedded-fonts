@@ -1,4 +1,4 @@
-use embedded_graphics::{prelude::*, primitives::Rectangle};
+use embedded_graphics::prelude::*;
 use nom::{
     bytes::complete::{tag, take_while},
     character::complete::{digit1, line_ending, multispace0, one_of, space0, space1},
@@ -24,15 +24,6 @@ impl Parse for Size {
     }
 }
 
-impl Parse for Rectangle {
-    fn parse(input: &str) -> IResult<&str, Self> {
-        map(
-            separated_pair(Size::parse, space1, Point::parse),
-            |(size, position)| Rectangle::new(position, size),
-        )(input)
-    }
-}
-
 impl Parse for String {
     fn parse(input: &str) -> IResult<&str, Self> {
         map_opt(take_until_line_ending, |text: &str| text.parse_to())(input)
@@ -50,6 +41,27 @@ impl Parse for i32 {
 impl Parse for u32 {
     fn parse(input: &str) -> IResult<&str, u32> {
         map_opt(recognize(digit1), |i: &str| i.parse_to())(input)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct BoundingBox {
+    pub size: Size,
+    pub offset: Point,
+}
+
+impl BoundingBox {
+    pub fn new(size: Size, offset: Point) -> Self {
+        Self { size, offset }
+    }
+}
+
+impl Parse for BoundingBox {
+    fn parse(input: &str) -> IResult<&str, BoundingBox> {
+        map(
+            separated_pair(Size::parse, space1, Point::parse),
+            |(size, offset)| Self { size, offset },
+        )(input)
     }
 }
 

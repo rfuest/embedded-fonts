@@ -1,4 +1,4 @@
-use embedded_graphics::{prelude::*, primitives::Rectangle};
+use embedded_graphics::prelude::*;
 use nom::{
     character::complete::{multispace0, space1},
     combinator::{map, map_res},
@@ -14,7 +14,7 @@ pub struct Metadata {
     pub name: String,
     pub point_size: i32,
     pub resolution: (u32, u32),
-    pub bounding_box: Rectangle,
+    pub bounding_box: BoundingBox,
 }
 
 impl Parse for Metadata {
@@ -57,8 +57,8 @@ fn metadata_size(input: &str) -> IResult<&str, (i32, (u32, u32))> {
     )(input)
 }
 
-fn metadata_bounding_box(input: &str) -> IResult<&str, Rectangle> {
-    statement("FONTBOUNDINGBOX", Rectangle::parse)(input)
+fn metadata_bounding_box(input: &str) -> IResult<&str, BoundingBox> {
+    statement("FONTBOUNDINGBOX", BoundingBox::parse)(input)
 }
 
 #[cfg(test)]
@@ -90,7 +90,7 @@ FONTBOUNDINGBOX 16 24 0 0"#;
                     name: String::from("\"test font\""),
                     point_size: 16,
                     resolution: (75, 75),
-                    bounding_box: Rectangle::new(Point::zero(), Size::new(16, 24))
+                    bounding_box: BoundingBox::new(Size::new(16, 24), Point::zero())
                 }
             ))
         );

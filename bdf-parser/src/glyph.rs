@@ -1,4 +1,4 @@
-use embedded_graphics::{prelude::*, primitives::Rectangle};
+use embedded_graphics::prelude::*;
 use nom::{
     bytes::complete::{tag, take_until, take_while_m_n},
     character::complete::multispace0,
@@ -15,7 +15,7 @@ use super::helpers::*;
 pub struct Glyph {
     pub name: String,
     pub encoding: Option<char>,
-    pub bounding_box: Rectangle,
+    pub bounding_box: BoundingBox,
     pub bitmap: Vec<u8>,
     pub scalable_width: Option<Size>,
     pub device_width: Option<Size>,
@@ -27,7 +27,7 @@ impl Parse for Glyph {
         let (input, encoding) = statement("ENCODING", parse_encoding)(input)?;
         let (input, scalable_width) = opt(statement("SWIDTH", Size::parse))(input)?;
         let (input, device_width) = opt(statement("DWIDTH", Size::parse))(input)?;
-        let (input, bounding_box) = statement("BBX", Rectangle::parse)(input)?;
+        let (input, bounding_box) = statement("BBX", BoundingBox::parse)(input)?;
         let (input, _) = multispace0(input)?;
         let (input, bitmap) = parse_bitmap(input)?;
 
@@ -141,7 +141,7 @@ ENDCHAR"#;
                         0x00, 0x00, 0x00, 0x00, 0x18, 0x24, 0x24, 0x42, 0x42, 0x7e, 0x42, 0x42,
                         0x42, 0x42, 0x00, 0x00
                     ],
-                    bounding_box: Rectangle::new(Point::new(0, -2), Size::new(8, 16)),
+                    bounding_box: BoundingBox::new(Size::new(8, 16), Point::new(0, -2)),
                     scalable_width: Some(Size::new(500, 0)),
                     device_width: Some(Size::new(8, 0)),
                 }
@@ -165,7 +165,7 @@ ENDCHAR"#;
                 "",
                 Glyph {
                     bitmap: vec![],
-                    bounding_box: Rectangle::new(Point::zero(), Size::zero()),
+                    bounding_box: BoundingBox::new(Size::zero(), Point::zero()),
                     encoding: None,
                     name: "000".to_string(),
                     scalable_width: Some(Size::new(432, 0)),
@@ -191,7 +191,7 @@ ENDCHAR"#;
                 "",
                 Glyph {
                     bitmap: vec![],
-                    bounding_box: Rectangle::new(Point::zero(), Size::zero()),
+                    bounding_box: BoundingBox::new(Size::zero(), Point::zero()),
                     encoding: Some('\x00'),
                     name: "000".to_string(),
                     scalable_width: Some(Size::new(432, 0)),

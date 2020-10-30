@@ -10,15 +10,16 @@ mod metadata;
 mod properties;
 
 pub use glyph::Glyph;
+pub use helpers::BoundingBox;
 use helpers::{statement, Parse};
 pub use metadata::Metadata;
 pub use properties::{Properties, PropertyValue};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct BdfFont {
-    metadata: Option<Metadata>,
-    glyphs: Vec<Glyph>,
-    properties: Option<Properties>,
+    pub metadata: Option<Metadata>,
+    pub glyphs: Vec<Glyph>,
+    pub properties: Option<Properties>,
 }
 
 impl BdfFont {
@@ -65,7 +66,7 @@ extern crate maplit;
 mod tests {
     use super::*;
 
-    use embedded_graphics::{prelude::Point, prelude::Size, primitives::Rectangle};
+    use embedded_graphics::prelude::*;
 
     #[test]
     fn it_parses_a_font_file() {
@@ -109,12 +110,12 @@ ENDFONT
                         name: String::from("\"test font\""),
                         point_size: 16,
                         resolution: (75, 75),
-                        bounding_box: Rectangle::new(Point::zero(), Size::new(16, 24)),
+                        bounding_box: BoundingBox::new(Size::new(16, 24), Point::zero()),
                     }),
                     glyphs: vec![
                         Glyph {
                             bitmap: vec![0x1f, 0x01],
-                            bounding_box: Rectangle::new(Point::zero(), Size::new(8, 8)),
+                            bounding_box: BoundingBox::new(Size::new(8, 8), Point::zero()),
                             encoding: Some('@'), //64
                             name: "000".to_string(),
                             scalable_width: None,
@@ -122,7 +123,7 @@ ENDFONT
                         },
                         Glyph {
                             bitmap: vec![0x2f, 0x02],
-                            bounding_box: Rectangle::new(Point::zero(), Size::new(8, 8)),
+                            bounding_box: BoundingBox::new(Size::new(8, 8), Point::zero()),
                             encoding: Some('@'), //64
                             name: "000".to_string(),
                             scalable_width: None,
@@ -180,12 +181,12 @@ ENDCHAR
                         name: String::from("\"open_iconic_all_1x\""),
                         point_size: 16,
                         resolution: (75, 75),
-                        bounding_box: Rectangle::new(Point::zero(), Size::new(16, 16)),
+                        bounding_box: BoundingBox::new(Size::new(16, 16), Point::zero()),
                     }),
                     glyphs: vec![
                         Glyph {
                             bitmap: vec![0x1f, 0x01],
-                            bounding_box: Rectangle::new(Point::zero(), Size::new(8, 8)),
+                            bounding_box: BoundingBox::new(Size::new(8, 8), Point::zero()),
                             encoding: Some('@'), //64
                             name: "000".to_string(),
                             scalable_width: None,
@@ -193,7 +194,7 @@ ENDCHAR
                         },
                         Glyph {
                             bitmap: vec![0x2f, 0x02],
-                            bounding_box: Rectangle::new(Point::zero(), Size::new(8, 8)),
+                            bounding_box: BoundingBox::new(Size::new(8, 8), Point::zero()),
                             encoding: Some('@'), //64
                             name: "000".to_string(),
                             scalable_width: None,
@@ -225,11 +226,11 @@ ENDCHAR
                         name: String::from("\"windows_test\""),
                         point_size: 10,
                         resolution: (96, 96),
-                        bounding_box: Rectangle::new(Point::new(0, -4), Size::new(8, 16)),
+                        bounding_box: BoundingBox::new(Size::new(8, 16), Point::new(0, -4)),
                     }),
                     glyphs: vec![Glyph {
                         bitmap: vec![0xd5],
-                        bounding_box: Rectangle::new(Point::new(0, -4), Size::new(8, 16)),
+                        bounding_box: BoundingBox::new(Size::new(8, 16), Point::new(0, -4)),
                         encoding: Some('\x00'),
                         name: "0".to_string(),
                         scalable_width: Some(Size::new(600, 0)),
