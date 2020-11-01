@@ -1,0 +1,12 @@
+[package]
+name = "eg-bdf"
+version = "0.1.0"
+authors = ["Ralf Fuest <mail@rfuest.de>"]
+edition = "2018"
+
+[dependencies]
+embedded-graphics = "0.7.0-alpha.1" 
+eg-bdf-macros = { path = "../eg-bdf-macros" }
+
+[dev-dependencies]
+embedded-graphics-simulator = { git = "https://github.com/jamwaffles/embedded-graphics.git", rev = "2a1df0fdf5f7d199122ec1d39fff22a50ee0493c"}
